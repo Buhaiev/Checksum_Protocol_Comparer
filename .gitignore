@@ -32,6 +32,6 @@
 *.app
 
 #my personal files & Visual Studio
-Checksum_Protocol_Comparer/garbage.txt
-Checksum_Protocol_Comparer/Debug
-Checksum_Protocol_Comparer/Release
+Checksum_Protocol_Comparison/garbage.txt
+Checksum_Protocol_Comparison/Debug
+Checksum_Protocol_Comparison/Release
