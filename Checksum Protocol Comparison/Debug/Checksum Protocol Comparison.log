@@ -1,0 +1,4 @@
+﻿  Checksum Protocol Comparison.cpp
+c:\users\artem\source\repos\checksum protocol comparison\checksum protocol comparison\checksum protocol comparison.cpp(14): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\artem\source\repos\checksum protocol comparison\checksum protocol comparison\checksum protocol comparison.cpp(22): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
+  Checksum Protocol Comparison.vcxproj -> C:\Users\Artem\source\repos\Checksum Protocol Comparison\Debug\Checksum Protocol Comparison.exe

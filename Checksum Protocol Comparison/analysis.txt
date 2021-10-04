@@ -1,0 +1,336 @@
+0) Introduction
+As it is well known, the IP protocol used to transport data through the Internet shreds the binary file into small tiles called datagrams, which are sent one by one separately.
+As it it also known, the Internet connection is not perfect. Bit failures occur, sometimes whole datagrams disappear. To address the first problem, mistake finding and 
+correction algorithms exist. The purpose of this project is to compare existing and possible mistake finding approaches. 
+
+The MTU(Maximum Translation Unit) defines maximum datagram size. Most of the packages sent will be exactly this size(with no regard to IP-overhead for this project). 
+For Ethernet II this amounts to 1500 bytes (RFC 1191). 
+Other important values used:
+Minimal Translation Unit(Ethernet)- 64 bytes - due to specialities of Internet, it is often used
+
+There are four possible outcomes of a datagram transfer: 
+it was transported safely and accepted(later referred as True Positive); 
+it was corrupted but that was noticed (True Negative);
+the initial data was not corrupted, but the correction data was, so it was rejected(False Negative)
+mistakes occured both in the data and the correction algorithm, so it was accepted despite being corrupt(False Positive)
+
+These are listed in order of rising danger. True Negatives and False Negatives just demand a datagram re-sent(the second ones without a proper reason). 
+One False Positive can corrupt a whole file. This may not be important, when the object is an image, video or a sound recording, but a text or worse, a binary code
+will be corrupted irreparably. Therefore the main job of a mistake finder is to address False Positives. All the algorithms will be tweaked to prevent this kind of result 
+as much as possible, even if it means neglecting possibilities to recognise many more False Negatives.
+
+File lengths to compare:
+"War and peace" by Leo Tolstoy- 747.323 characters aka 747.323 byte aka 1 MB(with spaces, formatting headers, etc)
+"Doom",1993 by Id Software - 40 MB, aka 40.000.000 byte
+Average music track, 5 munites long, mp3 format - 4 MB, aka 4.000.000 byte
+Average photo filmed by an average phone, jpg format - 100 KB, aka 100.000 byte
+
+1) Singular Parity Bits(SPB)
+The simplest approach possible.
+ In this example, ASCII symbols will be used. Each of them takes exactly 7 bits, so in every byte there is a spare bit that carries no information.
+ The 1st bit in each byte is now a parity bit; it is set so, that the sum of bits with it is even. If the checking process finds out, that a byte has 
+ an uneven sum, it will be framed as corrupt.
+
+ Math behind the method: 
+To create a False Positive, an even number of bits in a row must be corrupted. 
+Each of 8 bits can be corrupted and has 7 other bits in the same byte, with corruption chance 1 500 000 for each.
+That gives approximately a corruption chance of (7*8/(CORRUPT_CHANCE^2)+ 7*8/(CORRUPT_CHANCE^4) + 7*8/(CORRUPT_CHANCE^6) +7*8/(CORRUPT_CHANCE^8))* datagramBytes
+													2 bits					4 bits						6 bits					8 bits
+As everything after 2 bits is hugely improbable (1.500.000^2 less possible), they will not be accounted for neither now nor later.
+So, that's approximately 3.7 *10^-8 (1 error in ~27 MB)
+
+ Result:
+ Check 1 (1500 byte datagram):
+Total bytes    1 500 000 000
+Total True Positive    693298           Persentage: 69.3298
+Total True Negative    274229           Persentage: 27.4229
+Total False Positive    21              Persentage: 0.0021
+Total False Negative    32452           Persentage: 3.2452
+
+Check 2 (1500 byte datagram):
+Total bytes    1 500 000 000
+Total True Positive    693543           Persentage: 69.3543
+Total True Negative    273833           Persentage: 27.3833
+Total False Positive    15              Persentage: 0.0015
+Total False Negative    32609           Persentage: 3.2609
+
+Check 3 (64 byte datagram):
+Total bytes    64 000 000
+Total True Positive    984510           Persentage: 98.451
+Total True Negative    13564            Persentage: 1.3564
+Total False Positive    1               Persentage: 0.0001
+Total False Negative    1925            Persentage: 0.1925
+
+Check 4 (64 byte datagram):
+Total bytes    64 000 000
+Total True Positive    984521           Persentage: 98.4521
+Total True Negative    13527            Persentage: 1.3527
+Total False Positive    1               Persentage: 0.0001
+Total False Negative    1951            Persentage: 0.1951
+
+Check 5(300 byte datagram):
+Total bytes    300 000 000
+Total True Positive    929295           Persentage: 92.9295
+Total True Negative    61986            Persentage: 6.1986
+Total False Positive    4               Persentage: 0.0004
+Total False Negative    8715            Persentage: 0.8715
+
+Check 6(750 byte datagram):
+Total bytes    750 000 000
+Total True Positive    832362           Persentage: 83.2362
+Total True Negative    148330           Persentage: 14.833
+Total False Positive    16              Persentage: 0.0016
+Total False Negative    19292           Persentage: 1.9292
+
+To sum up, there's about 1 error in 30 000 000 byte aka 30MB.
+It can be seen that SPB cannot be relied upon, when it comes to transferring files. Actually, it seems to perform worse on smaller datagram- I assume, more mistakes happen in bigger
+datagrams, so there are more possibilities to catch them. False Negatives also occur often, but it is unavoidable as no error correction happens.
+Additionally, SPB takes a lot of space: although no extra space is needed in our case, when only ASCII symbols are transferred, otherwise it would expand the file by extra 1/8.
+The optimal datagram size would be ~300 byte, so that True Positive rate is kept above 90%.
+But let's give it another chance. What if there was another layer of security?
+
+2) Double Parity Check
+Parity Check is back, in its improved version.
+Twin parity bit is an variant of parity bit, which also has each 8th byte as parity bit byte. Diagram below:
+a x x x x x x x 			x- regular bit
+a x x x x x x x 			a- parity bit, like in simple approach
+a x x x x x x x 			b- additional row of parity bits, each checking its column
+a x x x x x x x 			c- has to check column a and row b simutaneously, that is impossible. Therefore checks only column a
+a x x x x x x x
+a x x x x x x x
+a x x x x x x x
+c b b b b b b b
+
+This variant is very space-consuming even with the simplification taken, each 8th bit was extra added. In a full realisation, 15 of 64 bits are parity bits- that's even more.
+1312 bit datagrams are being used here to address this problem. The resulting(protected) datagrams will be exactly 1500 bit long.
+
+Math behind the method:
+To corrupt a bit, the following bits must be corrupted:
+1) one regular bit	(there are 64 in each byteblock)						
+2) any other bit in this row	(7 of them)
+3) any bit in the first column		(also 7)
+4) the bit in the second column and third row	(only one)
+Any other variants will make at least 1 more step, being 1.500.000 times less possible. So, they will not be calculated.
+Final formula is: 64*7*7/(CORRUPT_CHANCE^4)*(datagramBytes/7).					(each byteblock is 8 byte, 7 of them are initial data)
+Result: 1 error per 10^18 bit. 
+In reality it must be even smaller, as any True Negative or False Negative will abort the whole datagram. (The chance for it being appr. (1/CORRUPT_CHANCE)* (datagramBytes*8) )
+
+Result:
+Check 1(1312 byte datagram):
+Total bytes    1 500 000 000
+Total True Positive    693389           Persentage: 69.3389
+Total True Negative    244225           Persentage: 24.4225
+Total False Positive    0               Persentage: 0
+Total False Negative    62386           Persentage: 6.2386
+
+Check 2(1500 byte):
+Total bytes    1 715 000 000
+Total True Positive    658064           Persentage: 65.8064
+Total True Negative    274341           Persentage: 27.4341
+Total False Positive    0               Persentage: 0
+Total False Negative    67595           Persentage: 6.7595
+
+Check 3(1312 byte):
+Total bytes    15 000 000 000
+Total True Positive    6935683
+Total True Negative    2443315
+Total False Positive    0
+Total False Negative    621002
+
+This is where problems arise. This last one has took hours to complete and yet it has found no False Positives. I'll have to increase error probability to be able to analyse further.
+Remember the formula 64*7*7/(CORRUPT_CHANCE^4)*(datagramBytes/7)? According to it, an decrease of CORRUPT_CHANCE increases the error probability by 10^4=10 000.
+
+Check 4(1312 byte, 100x bit error probability)
+Total bytes    1 500 000 000
+Total True Positive    334459           Persentage: 33.4459
+Total True Negative    567563           Persentage: 56.7563
+Total False Positive    0               Persentage: 0
+Total False Negative    97978           Persentage: 9.7978
+
+Check 5(1312 byte, 1000x errors)
+Total bytes    1 500 000 000
+Total True Positive    314              Persentage: 0.0314
+Total True Negative    997829           Persentage: 99.7829
+Total False Positive    0               Persentage: 0
+Total False Negative    1857            Persentage: 0.1857
+
+The further tests can be even more untrue due to their small size.
+Check 6(15 byte, 100.000x errors)
+Total bytes    18 000 000
+Total True Positive    46
+Total True Negative    999313
+Total False Positive    1
+Total False Negative    640
+
+Check 7(15 byte, 100.000x errors)
+Total bytes    1 800 000 000
+Total True Positive    4757
+Total True Negative    99928756
+Total False Positive    218
+Total False Negative    66269
+
+To sum up: this one is quite safe, unlike its predecessor. Only 15-byte sequences with extremely high corruption chance have False Positives.
+A big size increase, howewer, makes matters worse; but with current Internet speeds it can be, perhaps, allowed.
+
+3)Checksums
+This is the first of the methods that is actually used. Both UDP and TCP use checksums. Although they are a level above IP that we're researching now, checksums can still 
+be used for our purpose.
+To calculate a checksum, the file is "cut" in 16-bit parts, which are summed together one-by-one. If a leading 17th bit emerges, it is moved to the end and added to the 1st bit.
+At last, the checksum is inverted, then stored in the end of the datagram.
+To check correctness, the same process is done once again(without inverting), the two checksums are summed up, and the result should be 16 1-bits. Or they are just compared.
+
+//					RESULTS WRONG CONCLUSIONS IN DEVELOPMENT
+Check 1(1498 byte):
+Total bytes    1500000000
+Total True Positive    693500
+Total True Negative    138
+Total False Positive    306019
+Total False Negative    343
+
+Check 2(1498 byte):
+Total bytes    1500000000
+Total True Positive    693445
+Total True Negative    148
+Total False Positive    306068
+Total False Negative    339
+
+Check 3(148 byte):
+Total bytes    150000000
+Total True Positive    964120
+Total True Negative    18
+Total False Positive    35405
+Total False Negative    457
+
+Check 4(64 byte):
+Total bytes    66000000
+Total True Positive    984032
+Total True Negative    10
+Total False Positive    15485
+Total False Negative    473
+
+4) Double sending
+What if the same package should be sent several times? I'll start with two.
+Check 1(750 byte):
+Total bytes    15000000
+Total True Positive    6896
+Total True Negative    1677
+Total False Positive    0
+Total False Negative    1427
+
+Check 2(750 byte):
+Total bytes    150 000 000
+Total True Positive    69383
+Total True Negative    16695
+Total False Positive    1
+Total False Negative    13921
+
+Check 3(750 byte):
+Total bytes    150000000
+Total True Positive    69386
+Total True Negative    16592
+Total False Positive    0
+Total False Negative    14022
+
+Check 4(750 byte):
+Total bytes    150000000
+Total True Positive    69380
+Total True Negative    16697
+Total False Positive    0
+Total False Negative    13923
+
+Check 5(750 byte):
+Total bytes    15000000
+Total True Positive    6917             Persentage: 69.17
+Total True Negative    1593             Persentage: 15.93
+Total False Positive    0               Persentage: 0
+Total False Negative    1490            Persentage: 14.9
+
+The results are, expectedly, not good enough. And the workload is immense: literally twice the data. 
+There's nothing else to say here. 
+
+5) Triple sending
+Perhaps there can be another chance for the paradigm. After all, the technologies like 10G Ethernet allow an astonishing bandwidth. 
+Now all the data is being sent thrice. 
+
+Check 1(500 byte):
+Total bytes    150 000 000
+Total True Positive    69484            Persentage: 69.484
+Total True Negative    11441            Persentage: 11.441
+Total False Positive    0               Persentage: 0
+Total False Negative    19075           Persentage: 19.075
+
+Check 2(500 byte):
+Total bytes    1 500 000 000
+Total True Positive    693462           Persentage: 69.3462
+Total True Negative    115103           Persentage: 11.5103
+Total False Positive    0               Persentage: 0
+Total False Negative    191435          Persentage: 19.1435
+
+Check 3(500 byte):
+Total bytes    15 000 000 000
+Total True Positive    6932105          Persentage: 69.321
+Total True Negative    1150265          Persentage: 11.5027
+Total False Positive    0               Persentage: 0
+Total False Negative    1917630         Persentage: 19.1763
+
+Check 4(50 byte, 10 000x errors):
+Total bytes    150 000 000
+Total True Positive    319              Persentage: 0.0319
+Total True Negative    931151           Persentage: 93.1151
+Total False Positive    0               Persentage: 0
+Total False Negative    68530           Persentage: 6.853
+
+Check 5(5 byte, 100 000x errors):
+Total bytes    150 000 000
+Total True Positive    2431             Persentage: 0.02431
+Total True Negative    9368018          Persentage: 93.6802
+Total False Positive    28              Persentage: 0.00028
+Total False Negative    629523          Persentage: 6.29523
+
+Check 6:(5 byte, 100 000x errors):
+Total bytes    150 000 000
+Total True Positive    2481             Persentage: 0.02481
+Total True Negative    9367418          Persentage: 93.6742
+Total False Positive    26              Persentage: 0.00026
+Total False Negative    630075          Persentage: 6.30075
+
+The overall result is really satisfying: 5 000 000 000 000 byte of data give us 25-30 False Positives. That amounts to approximately 1 False Positive per 185 GB.
+But there's a cost. When reviewing Double Parity bit I said the extra workload is huge. Here, it is tremendous. Yes, this approach is easily scalable, as there is no difficulty in
+sending one more copy, and there can even be a kind of error correction; but each new copy will increase the workload even greater. Thus, it would be wise to look for other approaches.
+For now, at least. Maybe, with development of extremely high-velocity Internet, there will be a time to shine for this one.
+
+6) CRC-32
+At long last, there it is. CRC-32 is corrently being used in IP. I will be using the version described by IEEE 802.3.
+The working principle is quite complex. To sum up, a polynomial is picked, called the generator polynomial(GP), with maximal power of 32. 
+Both the sender and receiver know it beforehand. Then, the data is divided %2 by the GP. The rest from this division equals the CRC checksum. 
+Generator polynomial: x^32+x^26+x^23+x^22+^16+x^12+x^11+x^10+x^8+x^7+x^5+x^4+x^2+x+1
+In binary, it looks like this: 00000001.00000100.11000001.00011101.10110111
+
+Check 1(15 bit, 100 000x errors):
+Total bytes    19 000 000
+Total True Positive    18               Persentage: 0.0018
+Total True Negative    999737           Persentage: 99.9737
+Total False Positive    0               Persentage: 0
+Total False Negative    245             Persentage: 0.0245
+
+Check 2(15 bit, 100 000x errors):
+Total bytes    19 000 000
+Total True Positive    28               Persentage: 0.0028
+Total True Negative    999726           Persentage: 99.9726
+Total False Positive    0               Persentage: 0
+Total False Negative    246             Persentage: 0.0246
+
+Check 3(15 bit, 100 000x errors):
+Total bytes    190 000 000
+Total True Positive    281              Persentage: 0.00281
+Total True Negative    9997476          Persentage: 99.9748
+Total False Positive    0               Persentage: 0
+Total False Negative    2243            Persentage: 0.02243
+//											CONCLUSIONS IN DEVELOPMENT
+
+7)Technical commentaries:
+-these address technical facts and difficulties. Mostly they have nothing to do with purpose of this study. Howewer, they can help if you want to simulate something, or
+answer technical questions.
+-please inform me if you possess any information about the bit corruption possibility. I assumed 1 bit in 1.500.000 gets corrupted. You can tweak the variable CORRUPT_CHANCE to change that.
+-running 100.000 datagrams of maximal size already takes more than a minute. Don't run more unless you have enough time.
+-debug mode is far slower then release mode. Use the latter only.
