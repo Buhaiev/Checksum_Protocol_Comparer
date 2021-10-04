@@ -1,0 +1,134 @@
+//GARBAGE DUMP
+//for more detailed work with new methods
+	//std::vector<bool> text = generateBinaryText();
+	/*std::vector<bool> text = getVectFromStr("01110011");
+	for (int byte = 0; byte < text.size(); byte += 8) {
+		for (int bit = 0; bit < 8; bit++) {
+			std::cout << text[byte + bit] << " ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+
+	std::vector<bool> protectedText= crcEncode32(text);
+	for (int byte = 0; byte < protectedText.size(); byte += 8) {
+		for (int bit = 0; bit < 8; bit++) {
+			std::cout << protectedText[byte+bit] << " ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+
+	std::vector<bool> corruptedText = specialCorrupt(protectedText);
+	for (int byte = 0; byte < corruptedText.size(); byte += 8) {
+		for (int bit = 0; bit < 8; bit++) {
+			std::cout << corruptedText[byte + bit] << " ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+	std::array<long long, 5> totalResult = crcCheck32(corruptedText, text);*/
+
+
+//debug-heavy variant of checkEfficiency
+//std::array<long long int, 5> checkEfficiency(functionPair funcs) {
+//#ifdef _DEBUG
+//	/*auto allStart = std::chrono::steady_clock::now();
+//	std::cout << std::endl;
+//
+//	auto start = std::chrono::steady_clock::now();*/
+//#endif
+//
+//	std::vector<bool> text = generateBinaryText();
+//#ifdef _DEBUG
+//	/*auto end = std::chrono::steady_clock::now();
+//	auto elapsed_seconds = end - start;
+//	std::cout << elapsed_seconds.count() << std::endl;
+//
+//	start = std::chrono::steady_clock::now();*/
+//#endif
+//	std::vector<bool> protectedText = (funcs.first)(text);
+//#ifdef _DEBUG
+//	/*end = std::chrono::steady_clock::now();
+//	elapsed_seconds = end - start;
+//	std::cout << elapsed_seconds.count() << std::endl;
+//
+//	start = std::chrono::steady_clock::now();*/
+//#endif
+//	std::vector<bool> corruptedText = simpleCorrupt(protectedText);
+//#ifdef _DEBUG
+//	/*end = std::chrono::steady_clock::now();
+//	elapsed_seconds = end - start;
+//	std::cout << elapsed_seconds.count() << std::endl;
+//
+//	start = std::chrono::steady_clock::now();*/
+//#endif
+//	std::array<long long int, 5> result = (funcs.second)(corruptedText, text);
+//#ifdef _DEBUG
+//	/*end = std::chrono::steady_clock::now();
+//	elapsed_seconds = end - start;
+//	std::cout << elapsed_seconds.count() << std::endl;
+//
+//	auto allEnd = std::chrono::steady_clock::now();
+//	elapsed_seconds = end - start;
+//	std::cout << "	" << elapsed_seconds.count() << std::endl;*/
+//#endif		
+//	//std::array<int, 5> result = { 0 };
+//#ifdef _DEBUG
+//	//std::cout << text << std::endl;
+//
+//	//for (int i = 0; i < text.size(); i++) {
+//	//	//if (((i) % 8 == 0) && (i != 0)) std::cout << "." << std::endl;
+//	//	std::cout << text[i];
+//	//}
+//	//std::cout << "	" << "Simple" << std::endl;
+//	//std::cout << std::endl;
+//	//for (int i = 0; i < protectedText.size(); i++) {
+//	//	//if (((i) % 8 == 0) && (i != 0)) std::cout << "." << std::endl;
+//	//	std::cout << protectedText[i];
+//	//}
+//	//std::cout << "	" << "Protected" << std::endl;
+//	//std::cout << std::endl;
+//	//for (int i = 0; i < corruptedText.size(); i++) {
+//	//	//if (((i) % 8 == 0) && (i != 0)) std::cout << "." << std::endl;
+//	//	std::cout << corruptedText[i];
+//	//}
+//	//std::cout << "	" << "Corrupt" << std::endl;
+//
+//	//std::cout << "Bytes" << "    " << result[0] << std::endl;
+//	//std::cout << "True Positive" << "    " << result[1] << std::endl;
+//	//std::cout << "True Negative" << "    " << result[2] << std::endl;
+//	//std::cout << "False Positive" << "    " << result[3] << std::endl;
+//	//std::cout << "False Negative" << "    " << result[4] << std::endl;
+//	//std::cout << std::endl;
+//#endif
+//
+//	return result;
+//}
+
+
+int main()
+{
+	srand(time(NULL));
+	//#ifdef _DEBUG
+	auto allStart = std::chrono::steady_clock::now();
+	//#endif
+	std::array<long long int, 5> totalResult = { 0 };
+	for (int i = 0; i < NUMBER_OF_DATAGRAMS; i++) {
+		std::array<int64_t, 5> result = checkEfficiency(crc32);
+		for (int i = 0; i < 5; i++) {
+			totalResult[i] += result[i];
+		}
+	}
+	std::cout << "Total bytes" << "    " << totalResult[0] << std::endl;
+	std::cout << "Total True Positive" << "    " << totalResult[1] << "		Persentage: " << double(totalResult[1]) / NUMBER_OF_DATAGRAMS * 100 << std::endl;
+	std::cout << "Total True Negative" << "    " << totalResult[2] << "		Persentage: " << double(totalResult[2]) / NUMBER_OF_DATAGRAMS * 100 << std::endl;
+	std::cout << "Total False Positive" << "    " << totalResult[3] << "		Persentage: " << double(totalResult[3]) / NUMBER_OF_DATAGRAMS * 100 << std::endl;
+	std::cout << "Total False Negative" << "    " << totalResult[4] << "		Persentage: " << double(totalResult[4]) / NUMBER_OF_DATAGRAMS * 100 << std::endl;
+
+	//#ifdef _DEBUG
+	auto allEnd = std::chrono::steady_clock::now();
+	auto elSec = std::chrono::duration_cast<std::chrono::milliseconds>(allEnd - allStart);
+	std::cout << "	" << elSec.count() << std::endl;
+	//#endif
+}
