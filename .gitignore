@@ -35,3 +35,10 @@
 Checksum_Protocol_Comparison/garbage.txt
 Checksum_Protocol_Comparison/Debug
 Checksum_Protocol_Comparison/Release
+*.log
+*.idb
+*.pdb
+*.obj
+*.tlog
+*.lastbuildstate
+
