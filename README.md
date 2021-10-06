@@ -10,7 +10,7 @@ TODO:
 
 -finish analysis, chapters "checksum16" and "crc32"
 
--implement error corretion in crc32
+-implement error correсtion in crc32
 
 -add more protocols
 
