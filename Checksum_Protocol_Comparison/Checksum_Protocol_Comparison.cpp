@@ -21,7 +21,7 @@ int main()
 
 	std::array<long long int, 5> totalResult = { 0 };
 	for (int i = 0; i < NUMBER_OF_DATAGRAMS; i++) {
-		std::array<int64_t, 5> result = checkEfficiency(parityBit);
+		std::array<int64_t, 5> result = checkEfficiency(doubleParityBit);
 		for (int i = 0; i < 5; i++) {
 			totalResult[i] += result[i];
 		}

@@ -131,11 +131,11 @@ Total False Positive    0               Persentage: 0
 Total False Negative    67595           Persentage: 6.7595
 
 Check 3(1312 byte):
-Total bytes    15 000 000 000
-Total True Positive    6935683
-Total True Negative    2443315
-Total False Positive    0
-Total False Negative    621002
+Total bytes    1 500 000 000
+Total True Positive    693321           Persentage: 69.3321
+Total True Negative    244517           Persentage: 24.4517
+Total False Positive    0               Persentage: 0
+Total False Negative    62162           Persentage: 6.2162
 
 This is where problems arise. This last one has took hours to complete and yet it has found no False Positives. I'll have to increase error probability to be able to analyse further.
 Remember the formula 64*7*7/(CORRUPT_CHANCE^4)*(datagramBytes/7)? According to it, an decrease of CORRUPT_CHANCE increases the error probability by 10^4=10 000.
@@ -157,17 +157,18 @@ Total False Negative    1857            Persentage: 0.1857
 The further tests can be even more untrue due to their small size.
 Check 6(15 byte, 100.000x errors)
 Total bytes    18 000 000
-Total True Positive    46
-Total True Negative    999313
-Total False Positive    1
-Total False Negative    640
+Total True Positive    43               Persentage: 0.0043
+Total True Negative    999314           Persentage: 99.9314
+Total False Positive    2               Persentage: 0.0002
+Total False Negative    641             Persentage: 0.0641
 
 Check 7(15 byte, 100.000x errors)
-Total bytes    1 800 000 000
-Total True Positive    4757
-Total True Negative    99928756
-Total False Positive    218
-Total False Negative    66269
+Total bytes    180 000 000
+Total True Positive    460              Persentage: 0.0046
+Total True Negative    9992982          Persentage: 99.9298
+Total False Positive    26              Persentage: 0.00026
+Total False Negative    6532            Persentage: 0.06532
+
 
 To sum up: this one is quite safe, unlike its predecessor. Only 15-byte sequences with extremely high corruption chance have False Positives.
 A big size increase, howewer, makes matters worse; but with current Internet speeds it can be, perhaps, allowed.
@@ -179,71 +180,94 @@ To calculate a checksum, the file is "cut" in 16-bit parts, which are summed tog
 At last, the checksum is inverted, then stored in the end of the datagram.
 To check correctness, the same process is done once again(without inverting), the two checksums are summed up, and the result should be 16 1-bits. Or they are just compared.
 
-//					RESULTS WRONG CONCLUSIONS IN DEVELOPMENT
-Check 1(1498 byte):
-Total bytes    1500000000
-Total True Positive    693500
-Total True Negative    138
-Total False Positive    306019
-Total False Negative    343
+Math behind the method:
+To cause a False Positive, you have to corrupt two bits with such numbers num1 and num2, so that num1%16=num2%16.
+Therefore, the error chance is (datagramBytes/16+1)*(datagramBytes/16)/2*16/CORRUPT_CHANCE^2. This is heavily dependant the message size, so bigger messages will be more prone to 
+errors. It's therefore wise to only encode smaller texts with this method.
+Check 1(1500 byte):
+Total bytes    150 200 000
+Total True Positive    69244            Persentage: 69.244
+Total True Negative    30580            Persentage: 30.58
+Total False Positive    117             Persentage: 0.117
+Total False Negative    59              Persentage: 0.059
 
-Check 2(1498 byte):
-Total bytes    1500000000
-Total True Positive    693445
-Total True Negative    148
-Total False Positive    306068
-Total False Negative    339
+Check 2(1500 byte):
+Total bytes    150 200 000
+Total True Positive    69326            Persentage: 69.326
+Total True Negative    30504            Persentage: 30.504
+Total False Positive    109             Persentage: 0.109
+Total False Negative    61              Persentage: 0.061
 
-Check 3(148 byte):
+Check 3(1498 byte):
 Total bytes    150000000
-Total True Positive    964120
-Total True Negative    18
-Total False Positive    35405
-Total False Negative    457
+Total True Positive    69214            Persentage: 69.214
+Total True Negative    30608            Persentage: 30.608
+Total False Positive    116             Persentage: 0.116
+Total False Negative    62              Persentage: 0.062
 
-Check 4(64 byte):
-Total bytes    66000000
-Total True Positive    984032
-Total True Negative    10
-Total False Positive    15485
-Total False Negative    473
+Check 4(1498 byte):
+Total bytes    1 500 000 000
+Total True Positive    693341           Persentage: 69.3341
+Total True Negative    304783           Persentage: 30.4783
+Total False Positive    1184            Persentage: 0.1184
+Total False Negative    692             Persentage: 0.0692
+
+Check 5(98 byte)
+Total bytes    100000000
+Total True Positive    975998           Persentage: 97.5998
+Total True Negative    23057            Persentage: 2.3057
+Total False Positive    6               Persentage: 0.0006
+Total False Negative    939             Persentage: 0.0939
+
+Check 5(498 byte)
+Total bytes    500000000
+Total True Positive    884966           Persentage: 88.4966
+Total True Negative    113998           Persentage: 11.3998
+Total False Positive    160             Persentage: 0.016
+Total False Negative    876             Persentage: 0.0876
+
+This is clearly bad, much worse then Parity Bits. Even in smaller messages where it's supposed to shine, the checksum fails to avoid False Positives.
+It seems unreasonable to try anymore, so other checksum variants won't be touched here.
 
 4) Double sending
 What if the same package should be sent several times? I'll start with two.
+
+Math behind the method:
+To cause a False Positive, you have to corrupt the same bit in both variants of the message. The chance of this occurance is 1/CORRUPTCHANCE^2.
 Check 1(750 byte):
-Total bytes    15000000
-Total True Positive    6896
-Total True Negative    1677
-Total False Positive    0
-Total False Negative    1427
+Total bytes    300 000 000
+Total True Positive    138770           Persentage: 69.385
+Total True Negative    33351            Persentage: 16.6755
+Total False Positive    1               Persentage: 0.0005
+Total False Negative    27878           Persentage: 13.939
 
 Check 2(750 byte):
 Total bytes    150 000 000
-Total True Positive    69383
-Total True Negative    16695
-Total False Positive    1
-Total False Negative    13921
+Total True Positive    69370            Persentage: 69.37
+Total True Negative    16762            Persentage: 16.762
+Total False Positive    0               Persentage: 0
+Total False Negative    13868           Persentage: 13.868
 
 Check 3(750 byte):
-Total bytes    150000000
-Total True Positive    69386
-Total True Negative    16592
-Total False Positive    0
-Total False Negative    14022
+Total bytes    1 500 000 000
+Total True Positive    693589           Persentage: 69.3589
+Total True Negative    167294           Persentage: 16.7294
+Total False Positive    2               Persentage: 0.0002
+Total False Negative    139115          Persentage: 13.9115
 
-Check 4(750 byte):
-Total bytes    150000000
-Total True Positive    69380
-Total True Negative    16697
-Total False Positive    0
-Total False Negative    13923
+Check 4(150 byte):
+Total bytes    600 000 000
+Total True Positive    1858548          Persentage: 92.9274
+Total True Negative    72248            Persentage: 3.6124
+Total False Positive    0               Persentage: 0
+Total False Negative    69204           Persentage: 3.4602
 
 Check 5(750 byte):
-Total bytes    15000000
-Total True Positive    6917             Persentage: 69.17
-Total True Negative    1593             Persentage: 15.93
-Total False Positive    0               Persentage: 0
-Total False Negative    1490            Persentage: 14.9
+Total bytes    600 000 000
+Total True Positive    1858948          Persentage: 92.9474
+Total True Negative    71876            Persentage: 3.5938
+Total False Positive    6               Persentage: 0.0003
+Total False Negative    69170           Persentage: 3.4585
 
 The results are, expectedly, not good enough. And the workload is immense: literally twice the data. 
 There's nothing else to say here. 
@@ -251,6 +275,9 @@ There's nothing else to say here.
 5) Triple sending
 Perhaps there can be another chance for the paradigm. After all, the technologies like 10G Ethernet allow an astonishing bandwidth. 
 Now all the data is being sent thrice. 
+
+Math behind the method:
+To cause a False Positive, you have to corrupt the same bit in both variants of the message. The chance of this occurance is 1/datagramBytes/CORRUPTCHANCE^3.
 
 Check 1(500 byte):
 Total bytes    150 000 000
@@ -306,6 +333,10 @@ Both the sender and receiver know it beforehand. Then, the data is divided %2 by
 Generator polynomial: x^32+x^26+x^23+x^22+^16+x^12+x^11+x^10+x^8+x^7+x^5+x^4+x^2+x+1
 In binary, it looks like this: 00000001.00000100.11000001.00011101.10110111
 
+Math behind the method:
+https://www.ieee802.org/3/bv/public/Jan_2015/perezaranda_3bv_2_0115.pdf
+Shortly, the error probability is circa 1/2^32
+
 Check 1(15 bit, 100 000x errors):
 Total bytes    19 000 000
 Total True Positive    18               Persentage: 0.0018
@@ -326,7 +357,22 @@ Total True Positive    281              Persentage: 0.00281
 Total True Negative    9997476          Persentage: 99.9748
 Total False Positive    0               Persentage: 0
 Total False Negative    2243            Persentage: 0.02243
-//											CONCLUSIONS IN DEVELOPMENT
+
+Check 4(1500 bit, regular errors):
+Total bytes    1 504 000 000
+Total True Positive    692690           Persentage: 69.269
+Total True Negative    306641           Persentage: 30.6641
+Total False Positive    0               Persentage: 0
+Total False Negative    669             Persentage: 0.0669
+
+Check 5(15 bit, 100 000x errors):
+Total bytes    190 000 000
+Total True Positive    275              Persentage: 0.00275
+Total True Negative    9997498          Persentage: 99.975
+Total False Positive    0               Persentage: 0
+Total False Negative    2227            Persentage: 0.02227
+
+This is the best one. Granting great protection from False Positives, CRC32 is the algorithm applied in most current use cases.
 
 7)Technical commentaries:
 -these address technical facts and difficulties. Mostly they have nothing to do with purpose of this study. Howewer, they can help if you want to simulate something, or

@@ -10,9 +10,9 @@
 #include <chrono>
 #include <deque>
 
-constexpr inline int MAX_TEXT_SIZE = 1500;
-constexpr inline int NUMBER_OF_DATAGRAMS = 1'000;
-constexpr inline int CORRUPT_CHANCE = 1'500'000; //1 error in CORRUPT_CHANCE bits
+constexpr inline int MAX_TEXT_SIZE = 15;
+constexpr inline int NUMBER_OF_DATAGRAMS = 1'000'000'0;
+constexpr inline int CORRUPT_CHANCE = 1'5; //1 error in CORRUPT_CHANCE bits
 typedef std::pair<std::function< std::deque<bool>(std::deque<bool>)>, std::function< std::array<int64_t, 5>(std::deque<bool>, std::deque<bool>)>> functionPair;
 
 //Functions 

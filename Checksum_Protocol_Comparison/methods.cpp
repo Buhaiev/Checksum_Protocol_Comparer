@@ -147,7 +147,8 @@ std::deque<bool> checksumEncode16(std::deque<bool> textToProtect) {
 		}
 	}
 	for (int i = 0; i < 16; i++) {
-		textToProtect[textToProtect.size() + 15 - i] = (checksum[i]);
+		//textToProtect[textToProtect.size() + 15 - i] = (checksum[i]);
+		textToProtect.push_back(checksum[i]);
 	}
 	return textToProtect;
 }
@@ -155,15 +156,16 @@ std::deque<bool> checksumEncode16(std::deque<bool> textToProtect) {
 std::array<int64_t, 5> checksumCheck16(std::deque<bool> protectedAndCorrupted, std::deque<bool> trueText) {
 	std::array<int64_t, 5> res = { 0 };
 	res[0] = protectedAndCorrupted.size() / 8;
-	std::deque<bool> newChecksum = checksumEncode16(trueText);
+	std::bitset<16> corruptedChecksum;
 	for (int i = 0; i < 16; i++) {
+		corruptedChecksum[i] = protectedAndCorrupted[protectedAndCorrupted.size() - 1];
 		protectedAndCorrupted.pop_back();
 	}
-	std::deque<bool> corruptedChecksum = checksumEncode16(protectedAndCorrupted);
+	std::deque<bool> newChecksum = checksumEncode16(protectedAndCorrupted);
 	bool textTrue = true;
 	bool flaggedAsCorrect = true;
 	for (int i = 0; i < 16; i++) {
-		if ((newChecksum[newChecksum.size() - 1 - i]) != (corruptedChecksum[corruptedChecksum.size() - 1 - i])) flaggedAsCorrect = false;
+		if (corruptedChecksum[i]!=newChecksum[protectedAndCorrupted.size()+15-i]) flaggedAsCorrect = false;
 	}
 	for (int i = 0; i < protectedAndCorrupted.size() - 16; i++) {
 		if (protectedAndCorrupted[i] != trueText[i]) textTrue = false;
@@ -171,7 +173,23 @@ std::array<int64_t, 5> checksumCheck16(std::deque<bool> protectedAndCorrupted, s
 
 	if (textTrue && flaggedAsCorrect) res[1]++;
 	else if (!textTrue && !flaggedAsCorrect) res[2]++;
-	else if (!textTrue && flaggedAsCorrect) res[3]++;
+	else if (!textTrue && flaggedAsCorrect) {
+		res[3]++;
+		/*std::cout << std::endl << "ProtectedAndCorrupted" << std::endl;
+		for (int i = 0; i < protectedAndCorrupted.size(); i++) {
+			std::cout << protectedAndCorrupted[i];
+		}
+		std::cout << std::endl;
+		std::cout << std::endl<<"New Checksum"<<std::endl;
+		for (int i = 0; i < newChecksum.size(); i++) {
+			std::cout << newChecksum[i];
+		}
+		std::cout << std::endl << "Corrupted Checksum" << std::endl;
+		for (int i = 0; i < corruptedChecksum.size(); i++) {
+			std::cout << corruptedChecksum[i];
+		}
+		std::cout << std::endl;*/
+	}
 	else if (textTrue && !flaggedAsCorrect) res[4]++;
 	return res;
 }
